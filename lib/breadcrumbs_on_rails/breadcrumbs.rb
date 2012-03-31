@@ -86,17 +86,36 @@ module BreadcrumbsOnRails
         end.join(@options[:separator] || " &raquo; ")
       end
 
-      def render_element(element)
-        content = @context.link_to_unless_current(compute_name(element), compute_path(element), element.options)
-        if @options[:tag]
-          @context.content_tag(@options[:tag], content)
-        else
-          content
-        end
-      end
+     def render_element(element)
+       content = @context.link_to_unless_current(compute_name(element), compute_path(element), element.options)
+       if @options[:tag]
+         @context.content_tag(@options[:tag], content)
+       else
+         content
+       end
+     end
+   end
 
-    end
+   # A Builder for Twitter Bootstrap
+   class TwitterBootstrapBuilder < Builder
+     def render
+       @context.content_tag(:ul, :class => 'breadcrumb') do
+         @elements.collect do |element|
+           render_element(element)
+         end.join(@context.content_tag(:span, @options[:separator] || "/", :class => 'divider')).html_safe
+       end
+     end
 
+     def render_element(element)
+       name= compute_name(element)
+       path = compute_path(element)
+       if @context.current_page?(path) || path.blank?
+         @context.content_tag(:li, name, :class => 'active')
+       else
+         @context.content_tag(:li, @context.link_to(name, path, element.options))
+       end
+     end
+   end
 
     # Represents a navigation element in the breadcrumb collection.
     #
@@ -116,7 +135,7 @@ module BreadcrumbsOnRails
       # @param  [Hash] options The element/link URL.
       # @return [Element]
       #
-      def initialize(name, path, options = {})
+    def initialize(name, path = nil, options = {})
         self.name     = name
         self.path     = path
         self.options  = options
